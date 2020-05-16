@@ -38,9 +38,9 @@ def train_step(image_data, target):
         giou_loss = conf_loss = prob_loss = 0
 
         # optimizing process
-        for i in range(3):
-            conv, pred = pred_result[i*2], pred_result[i*2+1]
-            loss_items = compute_loss(pred, conv, *target[i], i)
+        for j in range(3):
+            conv, pred = pred_result[j * 2], pred_result[j * 2 + 1]
+            loss_items = compute_loss(pred, conv, *target[j], j)
             giou_loss += loss_items[0]
             conf_loss += loss_items[1]
             prob_loss += loss_items[2]
@@ -74,7 +74,7 @@ def train_step(image_data, target):
 
 
 for epoch in range(Config.EPOCHS):
-    for image_data, target in trainset:
-        train_step(image_data, target)
+    for batch_img, targets in trainset:
+        train_step(batch_img, targets)
 
     model.save_weights("./out/my_yolov3")
