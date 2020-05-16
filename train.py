@@ -24,9 +24,9 @@ for i, fm in enumerate(feature_maps):
 
 model = tf.keras.Model(input_tensor, output_tensors)
 tools.load_pretrain_weights(model)
-# exit(0)
 
 optimizer = tf.keras.optimizers.Adam()
+
 if os.path.exists(logdir):
     shutil.rmtree(logdir)
 writer = tf.summary.create_file_writer(logdir)
@@ -76,4 +76,5 @@ def train_step(image_data, target):
 for epoch in range(Config.EPOCHS):
     for image_data, target in trainset:
         train_step(image_data, target)
+
     model.save_weights("./out/my_yolov3")

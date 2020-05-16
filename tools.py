@@ -1,26 +1,8 @@
 import numpy as np
-import tensorflow as tf
 import cv2
 import glob
 from lxml import etree
 from config import Config
-
-
-# 读取类别文件
-def read_classes_names(classes_path=Config.CLASSES):
-    names = dict()
-    with open(classes_path, 'r') as reader:
-        for index, name in enumerate(reader):
-            names[index] = name.strip('/n')
-    return names
-
-
-# 读取anchors文件
-def read_anchors(anchors_path=Config.ANCHORS):
-    with open(anchors_path) as reader:
-        anchors = reader.readline()
-    anchors = np.array(anchors.split(','), dtype=np.float32)
-    return anchors.reshape((3, 3, 2))
 
 
 # 载入图像数据集
@@ -39,7 +21,7 @@ def load_xmls(xmls_path=Config.ANNOT_PATH):
 # 生成训练文本
 def gen_train_txt(xmls, save_path=Config.TRAIN_TXT):
     dnames = dict()
-    with open(Config.CLASSES, 'r') as data:
+    with open(Config.CLASSES_PATH, 'r') as data:
         for index, name in enumerate(data):
             dnames[name.strip('\n')] = index
     fd_writer = open(save_path, 'w+')
@@ -116,5 +98,4 @@ def image_preprocess(image, target_size, gt_boxes=None):
 
 
 if __name__ == '__main__':
-    # load_images()
     gen_train_txt(load_xmls())

@@ -15,9 +15,9 @@ class Dataset:
         self.anchor_per_scale = Config.ANCHOR_PER_SCALE
         self.max_bbox_per_scale = 150
         self.strides = np.array(Config.STRIDES)
-        self.classes = tools.read_classes_names()
-        self.num_classes = len(self.classes)
-        self.anchors = np.array(tools.read_anchors())
+        self.classes = Config.read_classes_name()
+        self.num_classes = Config.read_classes_num()
+        self.anchors = np.array(Config.read_anchors())
 
         self.num_samples, self.samples = tools.load_images()
         self.num_batchs = int(np.ceil(self.num_samples / self.batch_size))

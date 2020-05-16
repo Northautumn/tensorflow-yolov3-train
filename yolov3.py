@@ -1,15 +1,79 @@
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
-from common import convolutional, upsample
-from darknet import darknet53
-from tools import read_classes_names, read_anchors
 from config import Config
 
-NUM_CLASS = len(read_classes_names())
-STRIDES = np.array(Config.STRIDES)
-ANCHORS = read_anchors()
+
+# 卷积层 = conv2d + bn + leaky_relu
+def convolutional(inputs, filters, kernel_size, downsample=False, activate=True, bn=True):
+    # 下采样
+    if downsample:
+        inputs = keras.layers.ZeroPadding2D(((1, 0), (1, 0)))(inputs)
+        padding = 'valid'
+        strides = 2
+    else:
+        padding = 'same'
+        strides = 1
+    conv = keras.layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=strides,
+                               padding=padding, use_bias=not bn, kernel_regularizer=keras.regularizers.l2(0.0005),
+                               kernel_initializer=tf.random_normal_initializer(stddev=0.01),
+                               bias_initializer=tf.constant_initializer(0.))(inputs)
+    if bn:
+        conv = keras.layers.BatchNormalization()(conv)
+    if activate:
+        conv = tf.nn.leaky_relu(conv, alpha=0.1)
+    return conv
 
 
+# 残差块
+def residual_block(inputs, filters_num1, filters_num2):
+    short_cut = inputs
+    conv = convolutional(inputs, filters_num1, (1, 1))
+    conv = convolutional(conv, filters_num2, (3, 3))
+    residual_output = short_cut + conv
+    return residual_output
+
+
+# 上采样
+def upsample(inputs):
+    return tf.image.resize(inputs, (inputs.shape[1] * 2, inputs.shape[2] * 2), method='nearest')
+
+
+# darknet网络
+def darknet53(inputs):
+    inputs = convolutional(inputs, 32, (3, 3))
+    inputs = convolutional(inputs, 64, (3, 3), downsample=True)
+
+    for i in range(1):
+        inputs = residual_block(inputs, 32, 64)
+
+    inputs = convolutional(inputs, 128, (3, 3), downsample=True)
+
+    for i in range(2):
+        inputs = residual_block(inputs, 64, 128)
+
+    inputs = convolutional(inputs, 256, (3, 3), downsample=True)
+
+    for i in range(8):
+        inputs = residual_block(inputs, 128, 256)
+
+    route1 = inputs
+    inputs = convolutional(inputs, 512, (3, 3), downsample=True)
+
+    for i in range(8):
+        inputs = residual_block(inputs, 256, 512)
+
+    route2 = inputs
+    inputs = convolutional(inputs, 1024, (3, 3), downsample=True)
+
+    for i in range(4):
+        inputs = residual_block(inputs, 512, 1024)
+
+    route3 = inputs
+    return route1, route2, route3
+
+
+# yolov3网络
 def yolov3(inputs):
     route1, route2, route3 = darknet53(inputs)
 
@@ -20,7 +84,7 @@ def yolov3(inputs):
     conv = convolutional(conv, 512, (1, 1))
 
     conv_lobj_branch = convolutional(conv, 1024, (3, 3))
-    conv_lbbox = convolutional(conv_lobj_branch, 3*(NUM_CLASS + 5), (1, 1), activate=False, bn=False)
+    conv_lbbox = convolutional(conv_lobj_branch, 3*(Config.read_classes_num() + 5), (1, 1), activate=False, bn=False)
 
     conv = convolutional(conv, 256, (1, 1))
     conv = upsample(conv)
@@ -34,7 +98,7 @@ def yolov3(inputs):
     conv = convolutional(conv, 256, (1, 1))
 
     conv_mobj_branch = convolutional(conv, 512, (3, 3))
-    conv_mbbox = convolutional(conv_mobj_branch, 3*(NUM_CLASS + 5), (1, 1), activate=False, bn=False)
+    conv_mbbox = convolutional(conv_mobj_branch, 3*(Config.read_classes_num() + 5), (1, 1), activate=False, bn=False)
 
     conv = convolutional(conv, 128, (1, 1))
     conv = upsample(conv)
@@ -48,7 +112,7 @@ def yolov3(inputs):
     conv = convolutional(conv, 128, (1, 1))
 
     conv_sobj_branch = convolutional(conv, 256, (3, 3))
-    conv_sbbox = convolutional(conv_sobj_branch, 3*(NUM_CLASS + 5), (1, 1), activate=False, bn=False)
+    conv_sbbox = convolutional(conv_sobj_branch, 3*(Config.read_classes_num() + 5), (1, 1), activate=False, bn=False)
 
     return [conv_sbbox, conv_mbbox, conv_lbbox]
 
@@ -109,10 +173,13 @@ def bbox_giou(boxes1, boxes2):
 
 def decode(conv_output, i=0):
     # conv_output = batch_size * output_size * output_size * (3 * (num_class + 5))
+    strides = np.array(Config.STRIDES)
+    anchors = Config.read_anchors()
+
     conv_shape = tf.shape(conv_output)
     batch_size = conv_shape[0]
     output_size = conv_shape[1]
-    conv_output = tf.reshape(conv_output, (batch_size, output_size, output_size, 3, 5 + NUM_CLASS))
+    conv_output = tf.reshape(conv_output, (batch_size, output_size, output_size, 3, 5 + Config.read_classes_num()))
     conv_raw_dxdy = conv_output[:, :, :, :, 0:2]
     conv_raw_dwdh = conv_output[:, :, :, :, 2:4]
     conv_raw_confidence = conv_output[:, :, :, :, 4:5]
@@ -124,8 +191,8 @@ def decode(conv_output, i=0):
     xy_grid = tf.tile(xy_grid[tf.newaxis, :, :, tf.newaxis, :], [batch_size, 1, 1, 3, 1])
     xy_grid = tf.cast(xy_grid, tf.float32)
 
-    pred_xy = (tf.sigmoid(conv_raw_dxdy) + xy_grid) * STRIDES[i]
-    pred_wh = (tf.exp(conv_raw_dwdh) * ANCHORS[i]) * STRIDES[i]
+    pred_xy = (tf.sigmoid(conv_raw_dxdy) + xy_grid) * strides[i]
+    pred_wh = (tf.exp(conv_raw_dwdh) * anchors[i]) * strides[i]
     pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
 
     pred_conf = tf.sigmoid(conv_raw_confidence)
@@ -135,11 +202,12 @@ def decode(conv_output, i=0):
 
 
 def compute_loss(pred, conv, label, bboxes, i=0):
+    strides = np.array(Config.STRIDES)
     conv_shape = tf.shape(conv)
     batch_size = conv_shape[0]
     output_size = conv_shape[1]
-    input_size = STRIDES[i] * output_size
-    conv = tf.reshape(conv, (batch_size, output_size, output_size, 3, 5 + NUM_CLASS))
+    input_size = strides[i] * output_size
+    conv = tf.reshape(conv, (batch_size, output_size, output_size, 3, 5 + Config.read_classes_num()))
 
     # 模型输出的置信值与分类
     conv_raw_conf = conv[:, :, :, :, 4:5]
