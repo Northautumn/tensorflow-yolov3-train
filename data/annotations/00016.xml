@@ -1,0 +1,26 @@
+<annotation>
+	<folder>JPGImage</folder>
+	<filename>00016.jpg</filename>
+	<path>/Users/wzh/dataset/ship/JPGImage/00016.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>240</width>
+		<height>360</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>boat</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>96</xmin>
+			<ymin>186</ymin>
+			<xmax>200</xmax>
+			<ymax>275</ymax>
+		</bndbox>
+	</object>
+</annotation>
