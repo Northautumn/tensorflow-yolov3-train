@@ -3,3 +3,4 @@ __pycache__/
 */.DS_Store
 darknet53.conv.74
 .idea
+data
