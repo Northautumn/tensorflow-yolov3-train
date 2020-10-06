@@ -25,7 +25,7 @@ def convolutional(inputs, filters, kernel_size, downsample=False, activate=True,
     return conv
 
 
-# 残差块
+# 残差单元
 def residual_block(inputs, filters_num1, filters_num2):
     short_cut = inputs
     conv = convolutional(inputs, filters_num1, (1, 1))
@@ -42,30 +42,31 @@ def upsample(inputs):
 # darknet网络
 def darknet53(inputs):
     inputs = convolutional(inputs, 32, (3, 3))
-    inputs = convolutional(inputs, 64, (3, 3), downsample=True)
 
+    # res1
+    inputs = convolutional(inputs, 64, (3, 3), downsample=True)
     for i in range(1):
         inputs = residual_block(inputs, 32, 64)
 
+    # res2
     inputs = convolutional(inputs, 128, (3, 3), downsample=True)
-
     for i in range(2):
         inputs = residual_block(inputs, 64, 128)
 
+    # res8
     inputs = convolutional(inputs, 256, (3, 3), downsample=True)
-
     for i in range(8):
         inputs = residual_block(inputs, 128, 256)
 
     route1 = inputs
+    # res8
     inputs = convolutional(inputs, 512, (3, 3), downsample=True)
-
     for i in range(8):
         inputs = residual_block(inputs, 256, 512)
 
     route2 = inputs
+    # res4
     inputs = convolutional(inputs, 1024, (3, 3), downsample=True)
-
     for i in range(4):
         inputs = residual_block(inputs, 512, 1024)
 

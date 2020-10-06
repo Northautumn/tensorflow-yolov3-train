@@ -4,3 +4,5 @@ __pycache__/
 darknet53.conv.74
 .idea
 data
+out
+train.txt

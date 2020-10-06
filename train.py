@@ -15,6 +15,7 @@ warmup_steps = Config.WARMUP_EPOCHS * steps_per_epoch
 total_steps = Config.EPOCHS * steps_per_epoch
 
 input_tensor = tf.keras.layers.Input([416, 416, 3])
+
 feature_maps = yolov3(input_tensor)
 output_tensors = []
 for i, fm in enumerate(feature_maps):
@@ -23,7 +24,8 @@ for i, fm in enumerate(feature_maps):
     output_tensors.append(pred_tensor)
 
 model = tf.keras.Model(input_tensor, output_tensors)
-tools.load_pretrain_weights(model)
+# tools.load_pretrain_weights(model)
+model.load_weights('./out/my_yolov3')
 
 optimizer = tf.keras.optimizers.Adam()
 

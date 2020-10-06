@@ -6,7 +6,7 @@ class Config:
     ANCHORS_PATH = 'baseline_anchors.txt'
     INPUT_SIZE = 416
     DATA_AUG = False
-    BATCH_SIZE = 4
+    BATCH_SIZE = 2
     WARMUP_EPOCHS = 2
     LR_INIT = 1e-3
     LR_END = 1e-6
@@ -15,7 +15,7 @@ class Config:
     ANCHOR_PER_SCALE = 3
     STRIDES = [8, 16, 32]
     TRAIN_TXT = 'train.txt'
-    EPOCHS = 4
+    EPOCHS = 50
     IOU_LOSS_THRESH = 0.5
 
     def __init__(self):

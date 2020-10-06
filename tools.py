@@ -79,15 +79,23 @@ def load_pretrain_weights(model, weights_file='darknet53.conv.74'):
     wf.close()
 
 
+# 图像预处理
 def image_preprocess(image, target_size, gt_boxes=None):
+    # 416, 416
     ih, iw = target_size
+    # 图像实际大小
     h, w, _ = image.shape
+    # 获取缩放比例
     scale = min(iw/w, ih/h)
+    # 获取缩放后的宽和高
     nw, nh = int(scale * w), int(scale * h)
+    # 图像缩放
     image_resized = cv2.resize(image, (nw, nh))
+    # 图像填充
     image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0)
     dw, dh = (iw - nw) // 2, (ih-nh) // 2
     image_paded[dh:nh+dh, dw:nw+dw, :] = image_resized
+    # 图像归一化
     image_paded = image_paded / 255.
     if gt_boxes is None:
         return image_paded
