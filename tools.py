@@ -5,17 +5,18 @@ from lxml import etree
 from config import Config
 
 
-# 载入图像数据集
+# 载入图像数据集，返回图像个数和图像路径集
 def load_images(images_path=Config.IMAGES_PATH, image_type='jpg'):
     images_path = images_path if images_path[-1] == '/' else images_path + '/'
     images_set = glob.glob(images_path + '*.{}'.format(image_type))
     return len(images_set), images_set
 
 
-# 载入xml文件
+# 载入xml文件，返回xml路径集
 def load_xmls(xmls_path=Config.ANNOT_PATH):
     xmls_path = xmls_path if xmls_path[-1] == '/' else xmls_path + '/'
-    return glob.glob(xmls_path + '*.xml')
+    xmls_set = glob.glob(xmls_path + '*.xml')
+    return len(xmls_set), xmls_set
 
 
 # 生成训练文本

@@ -24,8 +24,8 @@ for i, fm in enumerate(feature_maps):
     output_tensors.append(pred_tensor)
 
 model = tf.keras.Model(input_tensor, output_tensors)
-# tools.load_pretrain_weights(model)
-model.load_weights('./out/my_yolov3')
+tools.load_pretrain_weights(model, weights_file='darknet53.conv.74')
+# model.load_weights('./out/my_yolov3')
 
 optimizer = tf.keras.optimizers.Adam()
 

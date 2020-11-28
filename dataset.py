@@ -21,13 +21,15 @@ class Dataset:
         # 读取anchors文件，返回3*3*2
         self.anchors = np.array(Config.read_anchors())
 
-        self.num_samples, self.samples = tools.load_images()
+        self.num_samples, xmls_set = tools.load_xmls()
+
+        self.samples = tools.load_images()
         self.num_batchs = int(np.ceil(self.num_samples / self.batch_size))
         self.batch_count = 0
 
         self.output_sizes = self.train_input_size // self.strides
 
-        tools.gen_train_txt(tools.load_xmls())
+        tools.gen_train_txt(xmls_set)
         self.images_annots = self.load_train_txt()
 
         gpus = tf.config.list_physical_devices('GPU')
