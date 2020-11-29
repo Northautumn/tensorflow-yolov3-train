@@ -1,9 +1,8 @@
 __pycache__/
 .DS_Store
-*/.DS_Store
 darknet53.conv.74
-.idea
-data/
-out
-train.txt
-my.names
+.idea/
+/data
+/out
+/train.txt
+/my.names
