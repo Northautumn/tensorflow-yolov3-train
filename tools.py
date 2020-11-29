@@ -107,4 +107,5 @@ def image_preprocess(image, target_size, gt_boxes=None):
 
 
 if __name__ == '__main__':
-    gen_train_txt(load_xmls())
+    _, xmls = load_xmls()
+    gen_train_txt(xmls)
